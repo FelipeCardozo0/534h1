@@ -89,7 +89,7 @@ class ElasticNet:
         self.beta = np.zeros(d)
         loss_history = {}
 
-        for ep in range(self.epoch):
+        for ep in range(1, self.epoch + 1):
             indices = np.random.permutation(n)
             x_shuffled = x[indices]
             y_shuffled = y[indices]
