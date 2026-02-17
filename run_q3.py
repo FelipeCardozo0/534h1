@@ -91,7 +91,7 @@ print(f"\n>>> Best eta = {best_eta:.0e}  "
 # Loss curve for best eta
 print(f"\nLoss curve at eta={best_eta:.0e}:")
 bh = lr_results[best_eta]["hist"]
-for ep in [0, 9, 49, 99, 199, 299, 499]:
+for ep in [0, 9, 49, 99, 100, 199, 299, 499]:
     if ep in bh:
         print(f"  Epoch {ep:4d}: {bh[ep]:.2e}")
 
