@@ -1,0 +1,480 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mdframed}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Custom commands for vectors
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bx}{\mathbf{x}}
+
+\begin{document}
+\begin{center}
+{\Large CS 534 ML Spring 2025 Homework 1}
+\vspace{.8cm}
+\begin{tabular}{rl}
+\newline
+Name: & [Felipe Ortega Cardozo] \\
+Collaborators: & [None]
+\end{tabular}
+\end{center}
+
+
+By turning in this assignment, I declare to adhere to the provisions of the Emory honor code and that all of this is my own work.
+Disclaimer: AI was used to format the latex as the instructions require and for writing specific formulas and syntaxes that were not in the source file
+
+/* THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT
+CONSULTING CODE WRITTEN BY OTHER STUDENTS
+OR LARGE LANGUAGE MODELS LIKE CHATGPT.
+Felipe Cardozo*/
+I collaborated with the following classmates for this homework:
+None
+
+\section*{1. (Written) Ridge Regression (10 pts)}
+Show that the ridge regression estimates can be obtained by ordinary least squares regression on an augmented data set. We augment the centered matrix $\mathbf{X}$ with $k$ additional rows with the value $\sqrt{\lambda \mathbf{I}}$ and augment $\mathbf{y}$ with $k$ zeros. The idea is that by introducing artificial data having response value zero, the fitting procedure is forced to shrink the coefficients toward zero.
+
+\subsection*{Solution}
+
+\textbf{Step 1: Define the Augmented Data.}
+Let $\mathbf{X} \in \mathbb{R}^{N \times d}$ be the centered design matrix, $\mathbf{y} \in \mathbb{R}^{N \times 1}$ be the target vector, and $\lambda > 0$ be the regularization parameter. Define the augmented design matrix $\mathbf{X}' \in \mathbb{R}^{(N+d) \times d}$ and the augmented target vector $\mathbf{y}' \in \mathbb{R}^{(N+d) \times 1}$ as:
+\[
+\mathbf{X}' = \begin{bmatrix} \mathbf{X} \\ \sqrt{\lambda}\, \mathbf{I}_d \end{bmatrix}, \qquad
+\mathbf{y}' = \begin{bmatrix} \mathbf{y} \\ \mathbf{0}_d \end{bmatrix},
+\]
+where $\mathbf{I}_d$ is the $d \times d$ identity matrix and $\mathbf{0}_d$ is the $d \times 1$ zero vector.
+
+\bigskip
+\textbf{Step 2: State the OLS Estimator.}
+The ordinary least squares (OLS) closed-form solution applied to the augmented data is:
+\[
+\hat{\beta}_{\text{OLS}} = \left(\mathbf{X}'^T \mathbf{X}'\right)^{-1} \mathbf{X}'^T \mathbf{y}'.
+\]
+
+\bigskip
+\textbf{Step 3: Expand the Terms.}
+
+\textit{Computing $\mathbf{X}'^T \mathbf{X}'$:}
+\begin{align*}
+\mathbf{X}'^T \mathbf{X}'
+&= \begin{bmatrix} \mathbf{X}^T & \sqrt{\lambda}\, \mathbf{I}_d \end{bmatrix}
+   \begin{bmatrix} \mathbf{X} \\ \sqrt{\lambda}\, \mathbf{I}_d \end{bmatrix} \\
+&= \mathbf{X}^T \mathbf{X} + \sqrt{\lambda}\, \mathbf{I}_d \cdot \sqrt{\lambda}\, \mathbf{I}_d \\
+&= \mathbf{X}^T \mathbf{X} + \lambda\, \mathbf{I}_d.
+\end{align*}
+
+\textit{Computing $\mathbf{X}'^T \mathbf{y}'$:}
+\begin{align*}
+\mathbf{X}'^T \mathbf{y}'
+&= \begin{bmatrix} \mathbf{X}^T & \sqrt{\lambda}\, \mathbf{I}_d \end{bmatrix}
+   \begin{bmatrix} \mathbf{y} \\ \mathbf{0}_d \end{bmatrix} \\
+&= \mathbf{X}^T \mathbf{y} + \sqrt{\lambda}\, \mathbf{I}_d \cdot \mathbf{0}_d \\
+&= \mathbf{X}^T \mathbf{y}.
+\end{align*}
+
+\bigskip
+\textbf{Step 4: Conclusion.}
+Substituting the expanded terms back into the OLS formula:
+\begin{align*}
+\hat{\beta}_{\text{OLS}}
+&= \left(\mathbf{X}'^T \mathbf{X}'\right)^{-1} \mathbf{X}'^T \mathbf{y}' \\
+&= \left(\mathbf{X}^T \mathbf{X} + \lambda\, \mathbf{I}_d\right)^{-1} \mathbf{X}^T \mathbf{y} \\
+&= \hat{\beta}_{\text{Ridge}}.
+\end{align*}
+
+This shows that the OLS estimator on the augmented data $(\mathbf{X}', \mathbf{y}')$ is identical to the ridge regression estimator $\hat{\beta}_{\text{Ridge}} = (\mathbf{X}^T \mathbf{X} + \lambda \mathbf{I}_d)^{-1} \mathbf{X}^T \mathbf{y}$. Hence, ridge regression estimates can be obtained by ordinary least squares on the augmented data set. $\blacksquare$
+
+\section*{2. Predicting Appliance Energy Usage using Linear Regression (40 pts)}
+Consider the Appliances energy prediction dataset (\texttt{energydata.zip}), which contains measurements of temperature and humidity sensors from a wireless network, weather from a nearby airport station, and the recorded energy use of lighting fixtures to predict the energy consumption of appliances (\texttt{Appliances} attribute) in a low energy house. The data has been split into three subsets: training data from measurements up to 3/20/16 5:30, validation data from measurements between 3/20/16 5:30 and 5/7/16 4:30, and test data from measurements after 5/7/16 4:30. There are 26 attributes for each 10-minute interval, which is described in detail on the UCL ML repository, Appliances energy prediction dataset.
+
+Your goal is to predict the \texttt{Appliances}. For this problem, you will use \texttt{scikit-learn} for linear regression, ridge regression, and lasso regression. All the specified functions should be in the file \texttt{'q2.py'}. The functions in \texttt{'q2.py'} will be tested against a different training, validation, and test set, so it should work for a variety of datasets and assume that the data has been appropriately pre-processed (i.e., do not do any standardization or scaling or anything to the data prior to training the model). Any additional work such as loading the file, plotting, and required analysis with the data (e.g., parts 2e, 2h, 2j, etc.) should be done in a separate file and submitted with the Code.
+
+\subsection*{(a) (Written)}
+How did you preprocess the data? Explain your reasoning for using this pre-processing.
+
+\medskip
+\noindent\textbf{Answer:} Two preprocessing steps were applied:
+
+\begin{enumerate}
+\item \textbf{Dropping the \texttt{date} column.} The \texttt{date} column is a non-numeric string (e.g., ``1/11/16 17:00'') and cannot be directly used as a numerical feature. It was removed before any modelling.
+
+\item \textbf{Z-score standardisation (zero mean, unit variance).} Each feature $x_j$ was transformed as
+\[
+  x_j^{(\text{std})} = \frac{x_j - \mu_j}{\sigma_j},
+\]
+where $\mu_j$ and $\sigma_j$ are the mean and standard deviation computed \emph{only on the training set}. The same training-set statistics were then applied to the validation and test sets. This prevents data leakage.
+\end{enumerate}
+
+\noindent\textbf{Why standardisation is necessary:}
+Ridge and Lasso regression add penalty terms ($\lambda\|\beta\|_2^2$ and $\lambda\|\beta\|_1$, respectively) that treat every coefficient equally. If the features have vastly different scales (e.g., temperature in $[15,30]$ vs.\ pressure in $[730,775]$), a feature with a larger numeric range would receive disproportionately small coefficients simply because of its scale, causing the penalty to act unevenly. Standardising ensures that all features contribute on the same scale and that the regularisation penalty shrinks coefficients fairly across all features.
+
+\subsection*{(b) (Code)}
+Write a Python function \texttt{preprocess\_data(trainx, valx, testx)} that does what you specified in 2a above. If you do any feature extraction, you should do it outside of this function. Your function should return the preprocessed \texttt{trainx}, \texttt{valx}, and \texttt{testx}.
+
+\subsection*{(c) (Code)}
+Write a Python function \texttt{eval\_linear1(trainx, trainy, valx, valy, testx, testy)} that takes in a training set, validation set, and test set, (in the form of numpy arrays), respectively, and trains a standard linear regression model only on the training data and reports the RMSE and $R^{2}$ on the training set, validation set, and test set. Your function must return a dictionary with 6 keys, \texttt{'train-rmse'}, \texttt{'train-r2'}, \texttt{'val-rmse'}, \texttt{'val-r2'}, \texttt{'test-rmse'}, \texttt{'test-r2'} and the associated values are the numeric values.
+
+\subsection*{(d) (Code)}
+Write a Python function \texttt{eval\_linear2(trainx, trainy, valx, valy, testx, testy)} that takes in a training set, validation set, and test set, respectively, and trains a standard linear regression model using the training and validation data together and reports the RMSE and $R^{2}$ on the training set, validation set, and test set. Your function should follow the same output format specified above.
+
+\subsection*{(e) (Written)}
+Report (using a table) the RMSE and $R^{2}$ between 2c and 2d on the \texttt{energydata}. How do the performances compare and what do the numbers suggest?
+
+\medskip
+\noindent\textbf{Answer:}
+
+\begin{center}
+\begin{tabular}{l r r r r r r}
+\hline
+\textbf{Model} & \textbf{Train RMSE} & \textbf{Train $R^2$} & \textbf{Val RMSE} & \textbf{Val $R^2$} & \textbf{Test RMSE} & \textbf{Test $R^2$} \\
+\hline
+LR1 (train only)   & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+LR2 (train + val)  & 99.38 & 0.1676 & 88.71 & 0.1751 &  86.41 &    0.0959 \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Discussion:}
+LR1 (trained only on the training set) fits the training data slightly better (lower train RMSE), but generalises very poorly: the validation $R^2$ is essentially zero (0.0027) and the test $R^2$ is negative ($-0.21$), indicating predictions worse than predicting the mean.
+
+LR2 (trained on the combined training + validation set) has modestly higher training error but substantially better generalisation. Its test RMSE drops from 100.03 to 86.41 and its test $R^2$ becomes positive (0.096). This suggests the model benefits significantly from more training data: the additional validation samples help the linear model learn a more generalisable relationship. The negative test $R^2$ of LR1 indicates overfitting to the training distribution, which is mitigated by the larger and more diverse training set used by LR2.
+
+\subsection*{(f) (Code)}
+Write a Python function \texttt{eval\_ridge1(trainx, trainy, valx, valy, testx, testy, alpha)} that takes the regularization parameter, \texttt{alpha}, and trains a ridge regression model only on the training data. Your function should follow the same output format specified in (a) and (b).
+
+\subsection*{(g) (Code)}
+Write a Python function \texttt{eval\_lasso1(trainx, trainy, valx, valy, testx, testy, alpha)} that takes the regularization parameter, \texttt{alpha}, and trains a lasso regression model only on the training data. Your function should follow the same output format specified in (a), (b), and (d).
+
+\subsection*{(h) (Written)}
+Report (using a table) the RMSE and $R^{2}$ for training, validation, and test for all the different ($\lambda$) values you tried. What would be the optimal parameter you would select based on the validation data performance?
+
+\medskip
+\noindent\textbf{Answer:}
+
+\noindent\textbf{Ridge Regression} ($\lambda$ values from $10^{-4}$ to $10^{2}$, trained on training set only):
+
+\begin{center}
+\small
+\begin{tabular}{r r r r r r r}
+\hline
+$\lambda$ & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE & Test $R^2$ \\
+\hline
+0.0001 & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+0.001  & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+0.01   & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+0.1    & 98.23 & 0.1868 & 97.55 & 0.0025 & 100.05 & $-0.2121$ \\
+1.0    & 98.23 & 0.1867 & 97.61 & 0.0013 & 100.19 & $-0.2156$ \\
+10.0   & 98.24 & 0.1865 & 98.03 & $-0.0075$ & 101.19 & $-0.2398$ \\
+31.62  & 98.27 & 0.1861 & 98.27 & $-0.0124$ & 101.70 & $-0.2526$ \\
+100.0  & 98.35 & 0.1848 & 97.89 & $-0.0044$ & 100.57 & $-0.2247$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Lasso Regression} ($\lambda$ values from $10^{-4}$ to $10^{2}$, trained on training set only):
+
+\begin{center}
+\small
+\begin{tabular}{r r r r r r r}
+\hline
+$\lambda$ & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE & Test $R^2$ \\
+\hline
+0.0001 & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+0.001  & 98.23 & 0.1868 & 97.55 & 0.0024 & 100.06 & $-0.2123$ \\
+0.01   & 98.23 & 0.1867 & 97.68 & $-0.0001$ & 100.34 & $-0.2192$ \\
+0.1    & 98.29 & 0.1858 & 98.51 & $-0.0172$ & 101.99 & $-0.2597$ \\
+0.5623 & 98.54 & 0.1817 & 97.95 & $-0.0058$ & 100.15 & $-0.2146$ \\
+1.0    & 98.84 & 0.1766 & 96.53 & 0.0232 & 96.22 & $-0.1212$ \\
+\textbf{3.1623} & \textbf{100.87} & \textbf{0.1424} & \textbf{93.81} & \textbf{0.0776} & \textbf{88.70} & \textbf{0.0472} \\
+5.6234 & 103.45 & 0.0981 & 95.27 & 0.0485 & 90.05 & 0.0181 \\
+10.0   & 104.84 & 0.0736 & 96.24 & 0.0290 & 89.47 & 0.0306 \\
+31.62  & 108.93 & 0.0000 & 97.68 & $-0.0003$ & 90.89 & $-0.0003$ \\
+100.0  & 108.93 & 0.0000 & 97.68 & $-0.0003$ & 90.89 & $-0.0003$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Optimal parameters based on validation RMSE:}
+\begin{itemize}
+\item \textbf{Ridge:} $\lambda_{\text{Ridge}}^{*} = 0.0001$\, (Val RMSE = 97.54). For Ridge, the best validation performance occurs at the smallest regularisation value tested, indicating the unregularised OLS solution is already the best Ridge can offer on this data when trained on the training set alone.
+\item \textbf{Lasso:} $\lambda_{\text{Lasso}}^{*} = 3.1623$\, (Val RMSE = 93.81). Lasso with moderate regularisation substantially outperforms both OLS and Ridge. This suggests that many features are irrelevant or noisy, and Lasso's feature selection (setting 16 out of 25 coefficients to zero) improves generalisation.
+\end{itemize}
+
+\subsection*{(i) (Code)}
+Similar to part 2d, write the Python functions, \texttt{eval\_ridge2(trainx, trainy, valx, valy, testx, testy, alpha)} and \texttt{eval\_lasso2(trainx, trainy, valx, valy, testx, testy, alpha)} that train ridge and lasso using the training and validation set.
+
+\subsection*{(j) (Written)}
+Use the optimal regularization parameter from 2h and report the RMSE and $R^{2}$ on the training set, validation set, and test set for the functions you wrote on 2i? How does this compare to the results from 2h? What do the numbers suggest?
+
+\medskip
+\noindent\textbf{Answer:}
+
+Using the optimal $\lambda$ from 2h ($\lambda_{\text{Ridge}}^{*} = 0.0001$, $\lambda_{\text{Lasso}}^{*} = 3.1623$), the models are now retrained on the combined training + validation set:
+
+\begin{center}
+\begin{tabular}{l r r r r r r}
+\hline
+\textbf{Model} & \textbf{Train RMSE} & \textbf{Train $R^2$} & \textbf{Val RMSE} & \textbf{Val $R^2$} & \textbf{Test RMSE} & \textbf{Test $R^2$} \\
+\hline
+Ridge1 ($\lambda=0.0001$)    & 98.23 & 0.1868 & 97.54 & 0.0027 & 100.03 & $-0.2117$ \\
+Ridge2 ($\lambda=0.0001$)    & 99.38 & 0.1676 & 88.71 & 0.1751 &  86.41 &    0.0959 \\
+\hline
+Lasso1 ($\lambda=3.1623$)    & 100.87 & 0.1424 & 93.81 & 0.0776 & 88.70 & 0.0472 \\
+Lasso2 ($\lambda=3.1623$)    & 101.67 & 0.1289 & 91.82 & 0.1163 & 86.64 & 0.0909 \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Discussion:}
+
+For both Ridge and Lasso, training on the combined train + validation set (Ridge2 / Lasso2) substantially improves test-set performance compared to training on the training set alone (Ridge1 / Lasso1):
+
+\begin{itemize}
+\item \textbf{Ridge:} Test RMSE decreases from 100.03 to 86.41 and test $R^2$ goes from $-0.21$ to $+0.10$. The additional data helps Ridge learn a more generalisable model.
+\item \textbf{Lasso:} Test RMSE decreases from 88.70 to 86.64 and test $R^2$ improves from 0.047 to 0.091. The improvement is smaller since Lasso already performed better by selecting relevant features.
+\item In all cases, training RMSE slightly increases (the model is less overfit to training data), but validation and test metrics improve. This is a classic bias--variance tradeoff: the model trades a small amount of training-set fit for better generalisation.
+\item Lasso2 and Ridge2 achieve very similar test performance ($\approx86.4$--$86.6$ RMSE), suggesting that with enough data, both regularisation strategies converge to a similarly effective model.
+\end{itemize}
+
+\subsection*{(k) (Written)}
+Generate the coefficient path plots (regularization value vs. coefficient value) for both ridge and lasso. Also, note (line or point or star) where the optimal regularization parameters from 2h are on their respective plots. Make sure that your plots encompass all the expected behavior (coefficients should shrink towards 0).
+
+\medskip
+\noindent\textbf{Answer:}
+
+The coefficient path plots were generated for $\lambda \in [10^{-4}, 10^{2}]$ (50 log-spaced values). The optimal $\lambda$ from 2h is marked on each plot. A detailed description of the observed behaviour follows.
+
+\textbf{Ridge coefficient path:} As $\lambda$ increases from $10^{-4}$ to $10^{2}$, all 25 coefficients shrink continuously towards zero, but \emph{none are ever exactly zero}. The features with the largest coefficients at small $\lambda$ are \texttt{T\_out} ($-67.3$), \texttt{Tdewpoint} ($+63.3$), \texttt{RH\_2} ($-60.3$), \texttt{RH\_3} ($+53.7$), and \texttt{RH\_1} ($+43.4$). These remain the dominant coefficients across the entire path, though their magnitudes diminish. At $\lambda = 100$, the largest remaining coefficients are \texttt{RH\_2} ($-47.8$), \texttt{RH\_3} ($+44.3$), and \texttt{RH\_1} ($+36.7$), while \texttt{T\_out} has shrunk from $-67.3$ to $-8.1$ and \texttt{Tdewpoint} from $+63.3$ to $+6.6$. The optimal $\lambda^*_{\text{Ridge}} = 0.0001$ lies at the far left of the plot, where regularisation has virtually no effect.
+
+\textbf{Lasso coefficient path:} Unlike Ridge, Lasso drives coefficients to exactly zero at different thresholds. At $\lambda = 10^{-4}$, all 25 features are active. By $\lambda \approx 0.087$, 2 features have been zeroed out. At the optimal $\lambda^*_{\text{Lasso}} = 3.1623$, 16 out of 25 features are exactly zero. The 9 surviving features are: \texttt{lights}, \texttt{RH\_1}, \texttt{RH\_2}, \texttt{T3}, \texttt{RH\_3}, \texttt{T5}, \texttt{T6}, \texttt{RH\_8}, and \texttt{RH\_out}. At $\lambda \geq 31.62$, all coefficients are zero and the model predicts only the mean.
+
+\subsection*{(l) (Written)}
+What are 3 observations you can draw from looking at the coefficient path plots, and the metrics? This should be different from your observations from 2e, 2h, and 2j.
+
+\medskip
+\noindent\textbf{Answer:}
+
+\begin{enumerate}
+\item \textbf{Lasso performs implicit feature selection; Ridge does not.} The Lasso path shows coefficients being driven to exactly zero at distinct $\lambda$ thresholds, removing irrelevant features entirely. Ridge only shrinks coefficients towards zero but never eliminates them. At the optimal Lasso $\lambda$, only 9 of 25 features remain, yet the model achieves better validation performance than Ridge, demonstrating that a sparse model can outperform a dense one when many features are noisy or irrelevant.
+
+\item \textbf{Highly correlated features behave differently under Ridge vs.\ Lasso.} Features such as \texttt{T\_out} and \texttt{Tdewpoint} are physically correlated (outdoor temperature and dewpoint). In the Ridge path, both retain moderate coefficients at all $\lambda$ values, sharing the predictive load. In the Lasso path, both are zeroed out by $\lambda = 3.16$, with humidity features (\texttt{RH\_1}, \texttt{RH\_2}, \texttt{RH\_3}) absorbing their predictive power instead. This illustrates the well-known behaviour that Lasso arbitrarily selects one among correlated features, while Ridge distributes weight among them.
+
+\item \textbf{The order in which Lasso eliminates features reveals feature importance.} Features that survive to high $\lambda$ values (e.g., \texttt{lights}, \texttt{RH\_1}, \texttt{RH\_2}, \texttt{T3}, \texttt{RH\_3}) are the most individually predictive of appliance energy consumption after accounting for regularisation. Conversely, features eliminated early (e.g., \texttt{Windspeed}, \texttt{Visibility}, \texttt{Press\_mm\_hg}) have weak individual predictive power. This ranking provides an interpretable feature importance measure that is not available from Ridge or standard linear regression.
+\end{enumerate}
+
+\section*{3. Predicting Appliance Energy Usage using SGD (50 pts)}
+Consider the Appliances energy prediction Data set from the previous problem. A template file, \texttt{elastic.py}, defines a class \texttt{ElasticNet} that takes in the regularization parameters, \texttt{el} ($\lambda$), \texttt{alpha} ($\alpha$), \texttt{eta} ($\eta$) or the learning rate, the \texttt{batch} size (batch $\in [1, N]$), and \texttt{epoch} or the maximum number of epochs as parameters when creating the object (i.e., \texttt{elastic = new ElasticNet(el, alpha, eta, batch, epoch)}). You will implement \texttt{ElasticNet} using stochastic gradient descent to train your model. The functions in \texttt{'elastic.py'} will be tested against a different training, validation, and test set, so it should work for a variety of datasets and assume that the data has been appropriately pre-processed. For this problem, you \textbf{ARE NOT} allowed to use any existing toolbox/implementation (e.g., \texttt{scikit-learn}). Similar to problem 2, any additional work outside of (Code) should be done in a separate file and submitted with the Code for full credit.
+
+\subsection*{(a) (Code)}
+Implement the loss objective helper function in \texttt{elastic.py}. As a reminder, the optimization problem is:
+$$
+\min f_{o}(x) = \frac{1}{2} ||\mathbf{y} - \mathbf{X}\beta||_{2}^{2} + \lambda(\alpha||\beta||_{2}^{2} + (1-\alpha)||\beta||_{1}), \quad 0 < \alpha < 1 \quad (1)
+$$
+In other words, given the coefficients, data and the regularization parameters, your function will calculate the loss $f_{o}(x)$ as shown in Eq (1).
+
+\subsection*{(b) (Code)}
+Implement the gradient helper function in \texttt{elastic.py}. You may find it helpful to derive the update for a single training sample and to consider proximal gradient descent for the $||\beta||_{1}$ portion of the objective function. As a reminder, given step size $\eta$ and regularization parameter $\lambda$ such that $f(x) = g(x) + \lambda||x||_{1}$, the proximal update is:
+$$
+\text{prox}(x_i) = 
+\begin{cases} 
+x_i - \lambda\eta & \text{if } x_i > \lambda\eta \\
+0 & \text{if } |x_i| \le \lambda\eta \\
+x_i + \lambda\eta & \text{if } x_i < -\lambda\eta 
+\end{cases}
+$$
+
+\subsection*{(c) (Code)}
+Implement the Python function \texttt{train(self, x, y)} for your class that trains an elastic net regression model using stochastic gradient descent. Your function should return a dictionary where the key denotes the epoch number and the value of the loss associated with that epoch. (Note: lambda is not used since it is a Python function and can cause confusion.)
+
+\subsection*{(d) (Code)}
+Implement the Python function \texttt{coef(self)} for your class that returns the learned coefficients as a numpy array.
+
+\subsection*{(e) (Code)}
+Implement the Python function \texttt{predict(self, x)} that predicts the label for each training sample in x. If x is a numpy $m \times d$ array, then y is a numpy 1-d array of size $m \times 1$.
+
+\subsection*{(f) (Written)}
+For the optimal regularization parameters from ridge $(\lambda_{ridge})$ and lasso $(\lambda_{lasso})$ from 2h, and $\alpha = \frac{1}{2}$, what are good learning rates for the dataset? Justify the selection by trying various learning rates and illustrating the objective value $(f_{o}(x))$ on a graph for a range of epochs (one epoch = one pass through the training data). For the chosen learning rate you identified, what are the RMSE and $R^{2}$ for the elastic net model trained on the entire training set on the training, validation, and test sets?
+
+\medskip
+\noindent\textbf{Answer:}
+
+Using $\lambda = \lambda_{\text{Lasso}}^{*} = 3.1623$ from 2h, $\alpha = 0.5$, batch size $= 32$, and 500 epochs, the following learning rates were tested:
+
+\begin{center}
+\small
+\begin{tabular}{r r r r r r r r}
+\hline
+$\eta$ & Loss (ep 0) & Loss (ep 499) & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE \\
+\hline
+$10^{-3}$ & $9.92 \times 10^7$ & $9.75 \times 10^7$ & 140.59 & $-0.67$ & 126.86 & $-0.69$ & 101.48 \\
+$10^{-4}$ & $9.99 \times 10^7$ & $9.67 \times 10^7$ & 140.01 & $-0.65$ & 130.24 & $-0.78$ & 113.62 \\
+$10^{-5}$ & $1.05 \times 10^8$ & $9.67 \times 10^7$ & 139.99 & $-0.65$ & 131.17 & $-0.80$ & 116.99 \\
+$10^{-6}$ & $1.06 \times 10^8$ & $9.74 \times 10^7$ & 140.53 & $-0.66$ & 133.38 & $-0.86$ & 123.32 \\
+$\mathbf{10^{-7}}$ & $1.06 \times 10^8$ & $1.01 \times 10^8$ & 143.41 & $-0.73$ & \textbf{125.40} & $-0.65$ & 109.04 \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Chosen learning rate: $\eta = 10^{-7}$.}
+
+\textbf{Justification:} The learning rate $\eta = 10^{-7}$ achieves the lowest validation RMSE (125.40) among the configurations tested. The loss curve shows smooth, monotonically decreasing behaviour:
+
+\begin{center}
+\small
+\begin{tabular}{r r}
+\hline
+Epoch & Objective $f_o$ \\
+\hline
+0   & $1.064 \times 10^8$ \\
+49  & $1.054 \times 10^8$ \\
+99  & $1.047 \times 10^8$ \\
+199 & $1.035 \times 10^8$ \\
+499 & $1.013 \times 10^8$ \\
+\hline
+\end{tabular}
+\end{center}
+
+Larger learning rates ($\eta \ge 10^{-3}$) converge faster in loss value but produce more oscillatory gradient updates due to the mini-batch noise, leading to higher variance in the coefficient estimates. The loss function in our formulation uses the \emph{sum} (not the mean) of squared residuals, so the gradient magnitude is proportional to the batch size, and the Lipschitz constant of $\nabla g$ equals $\|X^TX\| \approx 88{,}779$. The theoretical stability bound $\eta < 2/L \approx 2.3 \times 10^{-5}$ applies to full-batch GD; for mini-batch SGD, the stochastic noise additionally limits the attainable accuracy for any fixed $\eta$.
+
+\textbf{Final metrics} (trained on entire training set, $\eta = 10^{-7}$, $\alpha = 0.5$, $\lambda = 3.1623$):
+
+\begin{center}
+\begin{tabular}{l r r}
+\hline
+\textbf{Set} & \textbf{RMSE} & $\mathbf{R^2}$ \\
+\hline
+Train      & 143.41 & $-0.7334$ \\
+Validation & 125.40 & $-0.6484$ \\
+Test       & 109.04 & $-0.4399$ \\
+\hline
+\end{tabular}
+\end{center}
+
+The negative $R^2$ values indicate that the SGD model has not fully converged to the optimum within 500 epochs, as the high condition number ($\kappa \approx 8{,}282$) of $X^TX$ requires thousands of iterations for gradient-based methods. This is in stark contrast to the closed-form sklearn solutions, which converge exactly in one step.
+
+\subsection*{(g) (Written)}
+Using the learning rate from the previous part, train elastic net (using only training data) for different values of $\alpha$ (it should encompass the entire range and include $\alpha = 0, 1$). Report the RMSE and $R^{2}$ for the models on training, validation, and test set.
+
+\medskip
+\noindent\textbf{Answer:}
+
+Using $\eta = 10^{-7}$, $\lambda = 3.1623$, batch size $= 32$, and 500 epochs, the Elastic Net was trained for different values of $\alpha$:
+
+\begin{center}
+\begin{tabular}{r r r r r r r}
+\hline
+$\alpha$ & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE & Test $R^2$ \\
+\hline
+0.00 (pure $L_1$) & 143.37 & $-0.7323$ & 125.33 & $-0.6466$ & 108.90 & $-0.4361$ \\
+0.10 & 143.38 & $-0.7325$ & 125.35 & $-0.6470$ & 108.93 & $-0.4369$ \\
+0.25 & 143.39 & $-0.7329$ & 125.37 & $-0.6475$ & 108.97 & $-0.4380$ \\
+0.50 & 143.41 & $-0.7334$ & 125.40 & $-0.6484$ & 109.04 & $-0.4399$ \\
+0.75 & 143.43 & $-0.7339$ & 125.43 & $-0.6493$ & 109.12 & $-0.4418$ \\
+0.90 & 143.44 & $-0.7342$ & 125.45 & $-0.6498$ & 109.16 & $-0.4429$ \\
+1.00 (pure $L_2$) & 143.45 & $-0.7344$ & 125.47 & $-0.6501$ & 109.19 & $-0.4437$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Observations:}
+\begin{itemize}
+\item Performance varies very little across $\alpha$ values. The test RMSE ranges only from 108.90 ($\alpha=0$) to 109.19 ($\alpha=1$), a span of 0.29.
+\item $\alpha = 0$ (pure $L_1$) gives the best test RMSE (108.90) and best validation RMSE (125.33), though the margin is negligible.
+\item The similarity across $\alpha$ values occurs because the SGD model has not fully converged: the coefficients ($\|\beta\|_2 \approx 15$) are still far from the optimal values ($\|\beta^*\|_2 \approx 45$--$146$ per sklearn). At these small coefficient magnitudes, the distinction between $L_1$ and $L_2$ penalties is minimal, since both penalties are small when $\|\beta\|$ is small.
+\item All models have negative $R^2$, confirming that the SGD optimiser requires substantially more iterations to match the closed-form solutions.
+\end{itemize}
+
+\subsection*{(h) (Written)}
+Based on the results from (c) and 2(a) and 2(c), what conclusions can you draw in terms of RMSE and $R^{2}$? Which model is the best? Also, discuss the differences between the SGD-variants of Ridge and LASSO and the standard implementations (Problem 2).
+
+\medskip
+\noindent\textbf{Answer:}
+
+\begin{center}
+\adjustbox{max width=\textwidth,center}
+{
+\footnotesize
+\begin{tabular}{l r r r r r r}
+\hline
+\textbf{Model} & \textbf{Train RMSE} & \textbf{Train $R^2$} & \textbf{Val RMSE} & \textbf{Val $R^2$} & \textbf{Test RMSE} & \textbf{Test $R^2$} \\
+\hline
+sklearn Ridge ($\lambda=0.0001$)  & 98.23  & 0.1868  & 97.54  & 0.0027  & 100.03 & $-0.2117$ \\
+sklearn Lasso ($\lambda=3.1623$)  & 100.87 & 0.1424  & 93.81  & 0.0776  & 88.70  & 0.0472 \\
+SGD $\alpha=1$ (Ridge-like)       & 143.45 & $-0.7344$ & 125.47 & $-0.6501$ & 109.19 & $-0.4437$ \\
+SGD $\alpha=0$ (Lasso-like)       & 143.37 & $-0.7323$ & 125.33 & $-0.6466$ & 108.90 & $-0.4361$ \\
+SGD $\alpha=0.5$ (Elastic Net)    & 143.41 & $-0.7334$ & 125.40 & $-0.6484$ & 109.04 & $-0.4399$ \\
+\hline
+\end{tabular}
+}
+\end{center}
+
+\noindent\textbf{Best model:} The \textbf{sklearn Lasso} ($\lambda = 3.1623$) achieves the best test-set performance (RMSE = 88.70, $R^2 = 0.047$) and the best validation performance (RMSE = 93.81, $R^2 = 0.078$). All sklearn models substantially outperform the SGD variants.
+
+\medskip
+\noindent\textbf{Key differences between SGD and sklearn:}
+
+\begin{enumerate}
+\item \textbf{Loss normalisation.} Our SGD implementation minimises $\frac{1}{2}\|y - X\beta\|_2^2 + \lambda(\cdots)$, where the data term is a \emph{sum} over all $N$ samples. Scikit-learn's Lasso minimises $\frac{1}{2N}\|y - X\beta\|_2^2 + \alpha\|\beta\|_1$, normalising by $N$. For $N = 9{,}868$, this means the same $\lambda$ value produces vastly different effective regularisation: in our formulation the regularisation term is negligible compared to the sum-based data loss ($\sim 10^8$), whereas in sklearn's formulation it is significant relative to the mean-based data loss ($\sim 10^4$).
+
+\item \textbf{Optimisation algorithm.} Scikit-learn Ridge uses a closed-form matrix inverse $(X^TX + \lambda I)^{-1}X^Ty$, converging in one step. Scikit-learn Lasso uses \emph{coordinate descent}, which cycles through features and solves a one-dimensional sub-problem per coordinate---this converges to the exact minimiser within a few hundred iterations. Our SGD approach computes noisy gradient estimates from 32-sample batches and applies proximal updates, introducing stochastic noise that prevents exact convergence with a fixed learning rate.
+
+\item \textbf{Condition number.} The design matrix $X^TX$ has condition number $\kappa \approx 8{,}282$. Gradient descent requires $O(\kappa \log(1/\varepsilon))$ iterations for $\varepsilon$-accuracy, while coordinate descent is largely insensitive to $\kappa$ for sparse problems.
+
+\item \textbf{Convergence status.} The SGD model's coefficient norms ($\|\beta\|_2 \approx 15$) are an order of magnitude smaller than the sklearn solutions ($\|\beta\|_2 \approx 44$--$146$). This confirms under-convergence: the coefficients have not grown large enough to fit the data, resulting in predictions barely better than the zero vector and deeply negative $R^2$.
+\end{enumerate}
+
+\noindent In summary, for this dataset the closed-form and coordinate descent methods (sklearn) are far superior because they converge exactly in a single pass. SGD is more suitable for very large datasets where the full $X^TX$ matrix does not fit in memory, but for $N < 10{,}000$ with 25 features, exact methods are both faster and more accurate.
+
+\subsection*{(i) (Written)}
+What are the final coefficients that yield the best elastic net model on the test data? Compare these with the final coefficients for the best-performing model on the validation dataset. Are there noticeable differences? If so, discuss the differences with respect to the impact on the performance.
+
+\medskip
+\noindent\textbf{Answer:}
+
+Both the best test model and the best validation model correspond to $\alpha = 0$ (pure $L_1$ proximal SGD). Since both were trained with identical hyperparameters and seed, they are the \emph{same model} with identical coefficients:
+
+\begin{center}
+\small
+\begin{tabular}{l r | l r}
+\hline
+\textbf{Feature} & \textbf{Coefficient} & \textbf{Feature} & \textbf{Coefficient} \\
+\hline
+lights      & 10.4483  & T6          &  2.2838 \\
+T1          &  0.6884  & RH\_6       & $-0.7428$ \\
+RH\_1       &  3.2186  & T7          & $-0.3003$ \\
+T2          &  4.1325  & RH\_7       & $-2.3318$ \\
+RH\_2       & $-2.9227$ & T8          &  0.6047 \\
+T3          &  3.5179  & RH\_8       & $-4.4550$ \\
+RH\_3       &  2.1658  & T9          & $-1.2969$ \\
+T4          &  1.1150  & RH\_9       & $-3.0644$ \\
+RH\_4       &  0.0234  & T\_out      &  1.7445 \\
+T5          & $-1.1690$ & Press\_mm\_hg & $-0.7695$ \\
+RH\_5       & $-0.7227$ & RH\_out     & $-3.6775$ \\
+Visibility  &  0.0047  & Windspeed   &  0.9500 \\
+Tdewpoint   & $-0.3360$ & & \\
+\hline
+\end{tabular}
+\end{center}
+
+$\|\beta\|_2 = 15.05$, with all 25 coefficients non-zero.
+
+\medskip
+\noindent\textbf{Analysis:}
+
+Since the best-test and best-validation models are identical, there is no coefficient discrepancy to analyse between them. However, comparing with the sklearn solutions reveals important differences:
+
+\begin{itemize}
+\item \textbf{Magnitude:} SGD coefficients are much smaller (max $\approx 10.4$) than sklearn Lasso coefficients (max $\approx 24.1$) or OLS coefficients (max $\approx 63.3$). The SGD optimiser has not had enough iterations to grow the coefficients to their optimal magnitude.
+
+\item \textbf{Sparsity:} Despite using $\alpha = 0$ (pure $L_1$), the SGD model retains all 25 features. In contrast, sklearn Lasso at $\lambda = 3.1623$ zeros out 16 of 25 features. This is because the SGD coefficients are still small: the proximal soft-thresholding operator only zeroes out a component when it passes through zero during a gradient update, which is unlikely when all coefficients are small and moving slowly.
+
+\item \textbf{Feature ranking:} The relative ordering of feature importance is broadly consistent across both SGD and sklearn. In both cases, \texttt{lights} has the largest positive coefficient, and humidity features (\texttt{RH\_1}, \texttt{RH\_2}, \texttt{RH\_3}, \texttt{RH\_8}) are prominent. However, the SGD model assigns non-trivial weight to features that sklearn Lasso zeroed out (e.g., \texttt{T\_out}, \texttt{Tdewpoint}, \texttt{Press\_mm\_hg}), contributing noise and degrading generalisation.
+
+\item \textbf{Impact on performance:} The under-converged, non-sparse SGD coefficients lead to poor predictions (test RMSE 108.9 vs.\ sklearn Lasso's 88.7). The model neither fits the data well (coefficients too small) nor benefits from feature selection (no sparsity), leaving it in a suboptimal intermediate state. With a learning rate schedule (e.g., $\eta_t \propto 1/t$) or substantially more epochs, the SGD model would be expected to approach the performance of the closed-form solutions.
+\end{itemize}
+
+\end{document}

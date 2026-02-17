@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdflatex:*)",
+      "Bash(/Users/felipecardozo/Desktop/Aulas/534/HW1_export/.venv/bin/python:*)",
+      "Bash(.venv/bin/python:*)"
+    ]
+  }
+}
