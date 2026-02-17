@@ -253,13 +253,16 @@ Implement the Python function \texttt{train(self, x, y)} for your class that tra
 Implement the Python function \texttt{coef(self)} for your class that returns the learned coefficients as a numpy array.
 \subsection*{(e) (Code)}
 Implement the Python function \texttt{predict(self, x)} that predicts the label for each training sample in x. If x is a numpy $m \times d$ array, then y is a numpy 1-d array of size $m \times 1$.
+
 \subsection*{(f) (Written)}
 For the optimal regularization parameters from ridge $(\lambda_{ridge})$ and lasso $(\lambda_{lasso})$ from 2h, and $\alpha = \frac{1}{2}$, what are good learning rates for the dataset? Justify the selection by trying various learning rates and illustrating the objective value $(f_{o}(x))$ on a graph for a range of epochs (one epoch = one pass through the training data). For the chosen learning rate you identified, what are the RMSE and $R^{2}$ for the elastic net model trained on the entire training set on the training, validation, and test sets?
+
 \medskip
 \noindent\textbf{Answer:}
-I used lambda from lasso optimal, 3.1623, with alpha=0.5, batch=32, and ran 500 epochs. Tested learning rates from 10^{-3} down to 10^{-7}. Here's the table from my runs:
+Using the optimal Lasso parameter $\lambda = 3.1623$ from 2h, with $\alpha = 0.5$ and a batch size of 32, the model was trained for 500 epochs. The following learning rates ($\eta$) were tested:
+
 \begin{center}
-\small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{r r r r r r r r}
 \hline
 $\eta$ & Loss (ep 0) & Loss (ep 499) & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE \\
@@ -270,12 +273,15 @@ $10^{-5}$ & $1.05 \times 10^8$ & $9.67 \times 10^7$ & 139.99 & $-0.65$ & 131.17 
 $10^{-6}$ & $1.06 \times 10^8$ & $9.74 \times 10^7$ & 140.53 & $-0.66$ & 133.38 & $-0.86$ & 123.32 \\
 $\mathbf{10^{-7}}$ & $1.06 \times 10^8$ & $1.01 \times 10^8$ & 143.41 & $-0.73$ & \textbf{125.40} & $-0.65$ & 109.04 \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{center}
+
 \noindent\textbf{Chosen learning rate: $\eta = 10^{-7}$.}
-I went with 10^{-7} because it gave the best val RMSE at 125.40. When I plotted the loss over epochs, it decreased steadily without jumping around:
+
+\noindent\textbf{Justification:} The learning rate $\eta = 10^{-7}$ was selected because it achieved the lowest Validation RMSE (125.40). The loss curve for this rate decreased steadily and monotonically without the oscillations observed at higher rates:
+
 \begin{center}
-\small
 \begin{tabular}{r r}
 \hline
 Epoch & Objective $f_o$ \\
@@ -288,7 +294,10 @@ Epoch & Objective $f_o$ \\
 \hline
 \end{tabular}
 \end{center}
-Bigger etas like 10^{-3} dropped loss faster but the updates were noisy from mini-batches, leading to wobbly paths and worse final metrics. Since our loss is sum-based (not averaged), gradients are huge, and the Lipschitz constant is about 88,779, so theoretical max eta is around 2.3e-5 for stability in full GD. With SGD, noise makes it trickier, and smaller eta gave smoother progress. For the final run on full train with this eta:
+
+Larger learning rates (e.g., $10^{-3}$) reduced the loss faster initially but resulted in noisy updates due to mini-batch variance, leading to unstable convergence paths and worse final metrics. Since the loss function is defined as the \textit{sum} of squared errors (rather than the mean), the gradient magnitudes are very large ($\sim 10^8$). Given a Lipschitz constant of approximately $88,779$, the theoretical maximum $\eta$ for full Gradient Descent is $\approx 2.3 \times 10^{-5}$. With Stochastic Gradient Descent (SGD), the added noise necessitates an even smaller step size for stability.
+
+\noindent\textbf{Final Metrics} (trained on the full training set with $\eta = 10^{-7}$):
 \begin{center}
 \begin{tabular}{l r r}
 \hline
@@ -301,14 +310,17 @@ Test & 109.04 & $-0.4399$ \\
 \end{tabular}
 \end{center}
 
-Those negative R² show it's not converged yet after 500 epochs, the condition number 8,282 means GD needs tons of steps, but Sklearn's exact solvers work instantly, so this highlights SGD's slowness here.
+The negative $R^2$ values indicate that the model has not fully converged after 500 epochs. The high condition number of the design matrix ($\kappa \approx 8,282$) means gradient-based methods require significantly more iterations to converge compared to Scikit-learn's exact solvers.
 
 \subsection*{(g) (Written)}
 Using the learning rate from the previous part, train elastic net (using only training data) for different values of $\alpha$ (it should encompass the entire range and include $\alpha = 0, 1$). Report the RMSE and $R^{2}$ for the models on training, validation, and test set.
+
 \medskip
 \noindent\textbf{Answer:}
-With eta=10^{-7}, lambda=3.1623, batch=32, 500 epochs, I trained across alphas from 0 to 1:
+Using $\eta=10^{-7}$, $\lambda=3.1623$, batch size 32, and 500 epochs, the Elastic Net was trained across $\alpha$ values from 0 to 1:
+
 \begin{center}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{r r r r r r r}
 \hline
 $\alpha$ & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE & Test $R^2$ \\
@@ -321,21 +333,19 @@ $\alpha$ & Train RMSE & Train $R^2$ & Val RMSE & Val $R^2$ & Test RMSE & Test $R
 0.90 & 143.44 & $-0.7342$ & 125.45 & $-0.6498$ & 109.16 & $-0.4429$ \\
 1.00 (pure $L_2$) & 143.45 & $-0.7344$ & 125.47 & $-0.6501$ & 109.19 & $-0.4437$ \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{center}
 
+The results are highly similar across all $\alpha$ values, with Test RMSE ranging only from 108.90 to 109.19. The $\alpha=0$ model (pure Lasso-like) performs marginally better. This lack of variation is due to under-convergence; the coefficient norms ($\|\beta\|_2 \approx 15$) are small compared to the optimal Scikit-learn coefficients ($\approx 45-146$). When coefficients are small, the difference between $L_1$ and $L_2$ penalties is minimal, leading to similar optimization paths.
 
-Results are super similar across alphas. Test RMSE barely moves from 108.90 at alpha=0 to 109.19 at 1, and Alpha=0 edges out with best val and test, but it's low.
-
-This flatness is because the model hasn't converged far, and betas are small (~15 norm) vs sklearn's 45-146. When betas are tiny, L1 and L2 penalties don't differ much since penalties scale with beta size, then all negative R² confirm more epochs needed for SGD to catch up.
 \subsection*{(h) (Written)}
 Based on the results from (c) and 2(a) and 2(c), what conclusions can you draw in terms of RMSE and $R^{2}$? Which model is the best? Also, discuss the differences between the SGD-variants of Ridge and LASSO and the standard implementations (Problem 2).
+
 \medskip
 \noindent\textbf{Answer:}
 \begin{center}
-\adjustbox{max width=\textwidth,center}
-{
-\footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{l r r r r r r}
 \hline
 \textbf{Model} & \textbf{Train RMSE} & \textbf{Train $R^2$} & \textbf{Val RMSE} & \textbf{Val $R^2$} & \textbf{Test RMSE} & \textbf{Test $R^2$} \\
@@ -346,24 +356,27 @@ SGD $\alpha=1$ (Ridge-like) & 143.45 & $-0.7344$ & 125.47 & $-0.6501$ & 109.19 &
 SGD $\alpha=0$ (Lasso-like) & 143.37 & $-0.7323$ & 125.33 & $-0.6466$ & 108.90 & $-0.4361$ \\
 SGD $\alpha=0.5$ (Elastic Net) & 143.41 & $-0.7334$ & 125.40 & $-0.6484$ & 109.04 & $-0.4399$ \\
 \hline
-\end{tabular}
+\end{tabular}%
 }
 \end{center}
-\noindent\textbf{Best model:} Scikit-learn’s Lasso model at λ = 3.1623 delivers the best performance, achieving the lowest test RMSE of 88.70 and a positive R² of 0.047, along with strong validation results. Overall, it clearly outperforms SGD across all evaluated metrics.
 
-\noindent\textbf{Key differences between SGD and sklearn:}
-\begin{enumerate}
-\item Loss setup: My SGD uses sum of squares for the data term, so with N=9868, it's huge (~10^8), making lambda tiny in effect. Sklearn averages by 1/(2N), so same alpha hits harder relative to data loss (~10^4).
-\item Optimizer: Sklearn ridge is exact with matrix inverse, one shot. Lasso uses coordinate descent, quick exact solves per feature. My SGD is noisy from batches, proximal steps, fixed eta limits precision.
-\item Conditioning: X^TX condition ~8282, SGD needs O(kappa log eps) steps, slow; coord descent handles sparsity better, less affected.
-\item Where it lands: SGD betas ~15 norm, tiny vs sklearn's 44-146. Underfit, near-zero predictions, bad negative R².
-\end{enumerate}
-Bottom line, for this smallish data (N<10k, 25 feats), exact methods like sklearn are faster and spot-on. SGD shines for massive data where you can't load everything, but here it's overkill and underperforms without tweaks like scheduling eta or more epochs.
+\noindent\textbf{Best Model:} The \textbf{Scikit-learn Lasso} model at $\lambda = 3.1623$ is the best performing model, achieving the lowest Test RMSE (88.70) and a positive $R^2$ (0.0472). It significantly outperforms all SGD variants.
+
+\noindent\textbf{Key Differences between SGD and Scikit-learn:}
+\begin{itemize}
+    \item \textbf{Loss Formulation:} Our SGD implementation uses the sum of squared errors. With $N=9868$, the data loss is $\sim 10^8$, making the regularization term ($\lambda$) effectively negligible. Scikit-learn averages the loss by $1/(2N)$, making the same $\lambda$ much more impactful.
+    \item \textbf{Optimizer Efficiency:} Scikit-learn uses exact solvers (Ridge uses matrix inversion) or coordinate descent (Lasso), which converge to the global optimum very efficiently. SGD relies on noisy gradient estimates and fixed learning rates, limiting its precision.
+    \item \textbf{Conditioning:} The design matrix condition number is high ($\kappa \approx 8,282$). Gradient descent requires $O(\kappa \log(1/\epsilon))$ iterations, making it slow to converge. Coordinate descent handles this sparsity more effectively.
+    \item \textbf{Convergence State:} The SGD coefficients ($\|\beta\|_2 \approx 15$) are far smaller than the optimal Scikit-learn coefficients ($\approx 44-146$). The SGD model is effectively underfit, resulting in near-zero predictions and negative $R^2$ values.
+\end{itemize}
+
 \subsection*{(i) (Written)}
 What are the final coefficients that yield the best elastic net model on the test data? Compare these with the final coefficients for the best-performing model on the validation dataset. Are there noticeable differences? If so, discuss the differences with respect to the impact on the performance.
+
 \medskip
 \noindent\textbf{Answer:}
-The best on test and val both ended up being alpha=0 (pure L1), and since same params and seed, identical model and coeffs:
+The best performing model on both the Test and Validation sets was $\alpha=0$ (pure $L_1$). Since the hyperparameters and random seed were identical, the resulting model coefficients are identical:
+
 \begin{center}
 \small
 \begin{tabular}{l r | l r}
@@ -386,15 +399,14 @@ Tdewpoint & $-0.3360$ & & \\
 \hline
 \end{tabular}
 \end{center}
-Norm ~15.05, all 25 non-zero.
+The coefficient vector has a norm of $\approx 15.05$, and all 25 coefficients are non-zero.
 
 \noindent\textbf{Analysis:}
-No difference between test-best and val-best since they use the same model. However, stacking against sklearn exposes the shortcomings:
 \begin{itemize}
-\item Size: SGD coeffs max ~10.4, tiny vs sklearn lasso ~24.1 or OLS ~63.3. Not enough epochs to build up.
-\item Sparsity: Even at alpha=0, no zeros in SGD; sklearn zeros 16 as small coefficients mean proximal doesn't threshold much yet.
-\item Rankings: Similar top features, lights are a strong positive and RH is key, but SGD still assigns weight to sklearn-zeroed variables (e.g., T_out, Tdewpoint, Press_mm_hg), introducing noise.
-\item Performance hit: This half-baked state yields a poor fit (small coefficients) and no sparsity benefit, with worse RMSE (108.9 vs 88.7). More epochs or a decaying learning rate (η) could close the gap to the sklearn baseline.
+    \item \textbf{Magnitude:} The SGD coefficients are much smaller (max $\approx 10.4$) than the Scikit-learn Lasso coefficients ($\approx 24.1$) or OLS ($\approx 63.3$). This confirms the model has not run for enough epochs to build up to the optimal magnitude.
+    \item \textbf{Lack of Sparsity:} Despite using $\alpha=0$, the SGD model retains all 25 features. Scikit-learn's Lasso zeros out 16 features. This occurs because the SGD coefficients are still small; the proximal operator only thresholds a coefficient to zero when it crosses the origin during a step, which is rare when updates are small and slow.
+    \item \textbf{Feature Rankings:} The relative importance is similar (e.g., \texttt{lights} and humidity features are dominant). However, SGD assigns non-trivial weights to features that Lasso eliminated (e.g., \texttt{T\_out}, \texttt{Press\_mm\_hg}), introducing noise.
+    \item \textbf{Performance Impact:} The under-converged state results in poor predictive performance (Test RMSE 108.9) compared to the converged Lasso baseline (88.7). Implementing a learning rate schedule or increasing epochs significantly would be necessary to close this gap.
 \end{itemize}
 \end{document}
 
